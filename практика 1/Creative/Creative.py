@@ -13,7 +13,6 @@ from tensorflow.keras import regularizers
 from collections import Counter
 
 def load_and_split_data(csv_file, image_size=(64, 64), train_size=6000, val_size=2000):
-    """Loads data from CSV and splits it into train/val/test sets."""
     df = pd.read_csv(csv_file, encoding='utf-8')
     csv_dir = os.path.dirname(csv_file)
     images = []
@@ -21,18 +20,15 @@ def load_and_split_data(csv_file, image_size=(64, 64), train_size=6000, val_size
     mapping = {'0': '0', '1': '1', '2': '2', '3': '3', '4': '4', '5': '5', '6': '6', '7': '7', '8': '8', '9': '9'}
     for index, row in df.iterrows():
         image_path = os.path.normpath(os.path.join(csv_dir, row.iloc[0]))
-        label_str = str(row.iloc[1]).strip()  # Get label from csv file as str
+        label_str = str(row.iloc[1]).strip()  # Get label from csv file as str-
 
         if len(label_str) < 6:
            label_str = '0' * (6 - len(label_str)) + label_str
-           print(f"Padding with zeros: label_str: {label_str}")
-
         label = []
         for char in label_str:
             if char in mapping:
                 label.append(mapping[char])
             else:
-                print(f"Warning: character not in mapping, {char} filename: {image_path}, label_str: {label_str}")
                 continue
         try:
             image = Image.open(image_path).convert('L').resize(image_size)
@@ -40,9 +36,8 @@ def load_and_split_data(csv_file, image_size=(64, 64), train_size=6000, val_size
             images.append(image)
             labels.append(label)
         except Exception as e:
-            print(f"Error opening image at path: {image_path}, {e}")
+            print(f"Ошибка открытия файла по пути: {image_path}, {e}")
 
-    # Split into train, validation and test sets
     X = np.array(images)
     y = np.array(labels)
 
@@ -53,11 +48,6 @@ def load_and_split_data(csv_file, image_size=(64, 64), train_size=6000, val_size
     X_test = X[train_size + val_size:]
     y_test = y[train_size + val_size:]
     
-    print(f"X_train length: {len(X_train)}, y_train length: {len(y_train)}")
-    print(f"X_val length: {len(X_val)}, y_val length: {len(y_val)}")
-    print(f"X_test length: {len(X_test)}, y_test length: {len(y_test)}")
-
-
     return X_train, y_train, X_val, y_val, X_test, y_test
 
 # Путь к CSV
@@ -68,11 +58,8 @@ X_train, y_train, X_val, y_val, X_test, y_test = load_and_split_data(
     csv_path, image_size=(64, 64), train_size=6000, val_size=2000
 )
 
-print(f"First 20 labels of y_train: {y_train[:20]}")
-print(f"First 20 labels of y_test: {y_test[:20]}")
-
 # Кодирование меток
-num_classes = 10 # Number of classes for each position
+num_classes = 10
 y_train = np.array(y_train)
 y_val = np.array(y_val)
 y_test = np.array(y_test)
@@ -82,18 +69,12 @@ y_train_encoded = onehot_encoder.fit_transform(y_train.reshape(-1, 1)).reshape(y
 y_val_encoded = onehot_encoder.transform(y_val.reshape(-1, 1)).reshape(y_val.shape[0], 6, num_classes)
 y_test_encoded = onehot_encoder.transform(y_test.reshape(-1, 1)).reshape(y_test.shape[0], 6, num_classes)
 
-#Integer encode labels for loss function
 label_encoder = LabelEncoder()
 label_encoder.fit(np.array(['0','1','2','3','4','5','6','7','8','9']))
 
 integer_encoded_train = label_encoder.transform(y_train.reshape(-1)).reshape(y_train.shape[0], 6)
 integer_encoded_val = label_encoder.transform(y_val.reshape(-1)).reshape(y_val.shape[0], 6)
 integer_encoded_test = label_encoder.transform(y_test.reshape(-1)).reshape(y_test.shape[0], 6)
-
-
-print(f"Shape onehot_encoded_train: {y_train_encoded.shape}")
-print(f"Shape onehot_encoded_val: {y_val_encoded.shape}")
-print(f"Shape onehot_encoded_test: {y_test_encoded.shape}")
 
 # Построение модели
 model = Sequential([
